@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from services.trip_service import(calculate_daily_budget, get_trip_category, get_transportation_recommendation)
+from services.trip_service import(calculate_daily_budget, get_trip_category, get_transportation_recommendation, get_recommended_place)
 
 class TripRequest(BaseModel):
     destination:    str
@@ -27,7 +27,18 @@ def health():
 @app.get('/trip-categories')
 def trip_category():
     return ['Backpacker', 'Standard', 'Luxury']
-    
+
+@app.get('/api/v1/recommendations')
+def recommendations():
+    return ['Tokyo Tower', 'Mount Fuji', 'Shibuya']
+
+@app.get('/api/v1/transportations')
+def transportations():
+    return ['Bus', 'Train', 'Flight']
+
+@app.get('/api/v1/transportastion')
+def transportation():
+    return 
 
 # POST endpoint - receives JSON, return JSON
 @app.post('/api/v1/trips')
@@ -39,11 +50,13 @@ def create_trip(request: TripRequest):
         request.budget
     )
     recommendation_transport = get_transportation_recommendation(category)
+    recommendation_place = get_recommended_place(request.destination)
     return{
         'destination' : request.destination,
         'days': request.days,
         'budget' : request.budget,
         'daily_budget' : daily_budget,
         'category' : category,
-        'recommedtaion_transport' : recommendation_transport
+        'recommendation_transport' : recommendation_transport,
+        'recommendation_place' : recommendation_place
     }
