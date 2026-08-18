@@ -1,86 +1,49 @@
-from services.trip_service import(
-    calculate_daily_budget,
-    get_recommended_place,
-    get_transportation_recommendation,
-    get_trip_category
-    )
+from fastapi import FastAPI
+from pydantic import BaseModel
+from services.trip_service import(calculate_daily_budget, get_trip_category, get_transportation_recommendation)
 
-def print_destination(destination):
-    print('Your Destination')
+class TripRequest(BaseModel):
+    destination:    str
+    days:           int
+    budget:         float
+    travel_style:   str
 
-    index=0
-    while index < len(destination):
-        print(f'{index+1}, {destination[index]}')
-        index+=1
+app = FastAPI()
+
+#  GET endpoint at the root path
+@app.get('/')
+def home():
+    return{
+        'message' : 'Welcome to Kelana AI'
+    }
+
+# GET health
+@app.get('/health')
+def health():
+    return{
+        'status' : 'OK'
+    }
+
+@app.get('/trip-categories')
+def trip_category():
+    return ['Backpacker', 'Standard', 'Luxury']
     
-def recommended_place(destination):
-    print('Recommended Places')
-    print()
 
-    for destination in destination:
-        print(destination)
-
-        for place in get_recommended_place(destination):
-            print(f' - {place}')
-
-        print()
-
-
-def print_trip_summary(
-    destination,
-    days,
-    budget,
-    travel_style,
-    currency,
-    travel_month,
-    hotel_cost,
-    transportation_cost,
-    food_cost,
-    miscellaneous_cost,
-    transportation
-    ):
-
-    total_estimate_cost = (
-        hotel_cost
-        + transportation_cost
-        + food_cost
-        + miscellaneous_cost
+# POST endpoint - receives JSON, return JSON
+@app.post('/api/v1/trips')
+def create_trip(request: TripRequest):
+    daily_budget = calculate_daily_budget(
+        request.budget, request.days
     )
-
-    print('=========================')
-    print('kelanaAI')
-    print('=========================')
-
-    print(f'Destination         : {destination}')
-    print(f'Days                : {days}')
-    print(f'Budget              : {budget}')
-    print(f'Style               : {travel_style}')
-    print(f'Days                : {days}')
-    print(f'Budget              : {budget} {currency}')
-    print(f'Currency            : {currency}')
-    print(f'Travel month        : {travel_month}')
-    print(f'Hotel cost          : {hotel_cost}')
-    print(f'Transportation cost : {transportation_cost}')
-    print(f'Food cost           : {food_cost}')
-    print(f'Miscellaneous cost  : {miscellaneous_cost}')
-    print(f'Recommended Transportation : {transportation}')
-    print_re
-
-    if total_estimate_cost > budget:
-            print('Budget exceeded!')
-
-    print()
-
-#  Call it with any trip
-print_trip_summary(
-['Japan','Korea'],
-7,
-300.0,
-'Backpacker',
-'USD',
-'July',
-100.0,
-30.0,
-40.0,
-10.0
-)
+    category = get_trip_category(
+        request.budget
+    )
+    recommendation_transport = get_transportation_recommendation(category)
+    return{
+        'destination' : request.destination,
+        'days': request.days,
+        'budget' : request.budget,
+        'daily_budget' : daily_budget,
+        'category' : category,
+        'recommedtaion_transport' : recommendation_transport
+    }
